@@ -47,11 +47,11 @@ function render(){
  '<p class="lede">A challenge. Your evidence. An independent AI decision. A credential tied to the exact work — not just a badge on a profile.</p>'+
  '<div class="buttons"><button class="primary" data-page="workflow">Enter the assessment studio <span aria-hidden="true">↗</span></button><button class="outline" data-page="explorer">Verify on-chain ↗</button></div>'+
  '<div class="hero-micro"><span class="micro-dot"></span><span id="deployState">CHECKING</span><span> · </span><span>GenLayer Studionet / Test network</span></div></div>'+
- '<div class="certificate-stage"><div class="halo halo-a"></div><div class="halo halo-b"></div><div class="specimen-card">'+
- '<div class="specimen-head"><span class="tiny-star">✳</span><span>SKILLSTAMP / STUDIO</span><span>NO. —</span></div>'+
- '<div class="specimen-main"><span class="specimen-kicker">EVIDENCE-BOUND / SAMPLE FORMAT</span><div class="specimen-badge">S<span>✧</span></div><strong>Proof of<br>competency</strong>'+
- '<p>Scoped assessment · Versioned rubric · Linked to a wallet</p></div>'+
- '<div class="specimen-bottom"><span>UNISSUED EXAMPLE<br><b>Not a live credential</b></span><span class="barcode">▌▌▏▌▏▌▌▏▌▏</span></div></div>'+
+ '<div class="certificate-stage"><div class="halo halo-a"></div><div class="halo halo-b"></div><div class="specimen-card" id="specimenCard">'+
+ '<div class="specimen-head"><span class="tiny-star">✳</span><span>SKILLSTAMP / STUDIO</span><span id="specimenNo">NO. —</span></div>'+
+ '<div class="specimen-main"><span class="specimen-kicker" id="specimenKicker">EVIDENCE-BOUND / SAMPLE FORMAT</span><div class="specimen-badge">S<span>✧</span></div><strong id="specimenTitle">Proof of<br>competency</strong>'+
+ '<p id="specimenSubtitle">Scoped assessment · Versioned rubric · Linked to a wallet</p></div>'+
+ '<div class="specimen-bottom"><span><span id="specimenStatus">UNISSUED EXAMPLE</span><br><b id="specimenHolder">Not a live credential</b></span><span class="barcode">▌▌▏▌▏▌▌▏▌▏</span></div></div>'+
  '<span class="decor-note">TRUST IS EARNED, NOT CLAIMED ↗</span></div></div>'+
  '<div class="metric-bar"><div><small>01 / NETWORK</small><b>Studionet <span>61999</span></b></div><div><small>02 / ON-CHAIN CORE</small><b>02 contracts</b></div><div><small>03 / EVIDENCE</small><b>SHA-256 linked</b></div><div><small>04 / REVIEW</small><b>Independent AI</b></div></div>'+
  '<section class="section-wrap"><div class="section-intro"><div class="eyebrow">LEARNING, VERIFIED</div><h2>From a skill to<br><em>something provable.</em></h2><p>No mysterious reputation score. Every pass is scoped to a specific challenge, evidence and rubric version.</p></div>'+
@@ -100,6 +100,28 @@ function hideActivity(){
  if(activityTimer)clearTimeout(activityTimer);
  activityTimer=null;noticeSerial++;
  $('txPanel').hidden=true;
+}
+async function loadLiveCredential(){
+ if(!config?.configured)return;
+ try{
+  const stats=await api('second','stats'),id=Number(stats.credentials);
+  if(!Number.isSafeInteger(id)||id<1)return;
+  const credential=await api('second','get_credential',[id]);
+  if(credential?.id!==id||!ADDRESS.test(credential.holder||'')||
+     !/^[0-9a-f]{64}$/.test(credential.rubric_sha256||'')||
+     !/^[0-9a-f]{64}$/.test(credential.evidence_sha256||'')||
+     !['VALID','REVOKED'].includes(credential.status))return;
+  $('specimenCard').classList.add('is-live');
+  $('specimenNo').textContent='NO. '+String(id).padStart(3,'0');
+  $('specimenKicker').textContent='GENLAYER / ON-CHAIN CREDENTIAL';
+  $('specimenTitle').innerHTML='Verified<br>competency';
+  $('specimenSubtitle').textContent=credential.title+' · '+credential.verdict;
+  $('specimenStatus').textContent=credential.status+' / ON-CHAIN';
+  $('specimenHolder').textContent='Holder '+short(credential.holder);
+  if(credential.status==='REVOKED')$('specimenCard').classList.add('is-revoked');
+  const index=project.reads.findIndex(r=>r[2]==='get_credential');
+  if(index>=0){$('readMethod').value=String(index);$('readId').value=String(id);updateReadFields()}
+ }catch{ /* Keep the visual placeholder if a live finalized record cannot be read. */ }
 }
 function notice(title,info,phase=0,hash='',working=false,kind='pending'){
  if(activityTimer)clearTimeout(activityTimer);
@@ -501,7 +523,7 @@ async function init(){
   $('workflowNotice').textContent='No serverless configuration available. Deploy contracts and API before signing.';
  }
  setBusy(false);
- await loadIssuer();
+ await Promise.all([loadIssuer(),loadLiveCredential()]);
  try{const wallets=await window.ethereum?.request?.({method:'eth_accounts'});if(ADDRESS.test(wallets?.[0]||''))setAccount(wallets[0]);}catch{}
  const pending=loadPending();
  if(pending?.hash&&config?.configured)void follow(pending);
