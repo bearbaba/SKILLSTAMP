@@ -103,4 +103,16 @@ Independent `LATEST_FINAL` readback after issuance:
 
 The registry enforces one issuance per attempt, but a separately signed duplicate-issue rollback has not yet been observed. `credential_permission(...).allowed=true` remains a valid prerequisite read; it is **not** evidence that repeated issuance is allowed, since replay prevention is enforced by `CredentialRegistry` state.
 
-**Proof boundary:** Four real signed transactions establish Challenge #1, Applicant Attempt #1, an AI consensus `PASS`, and a persisted `VALID` Credential #1 linked to the original evidence and rubric hashes. No revocation or duplicate-issue rollback is claimed at this point. A `PASS` attests to the supplied synthetic response against this challenge, not independent real-world qualification or identity.
+## Signed rollback — repeated credential issuance denied
+
+| Field | Observed value |
+| --- | --- |
+| Operation | `CredentialRegistry.issue_credential(1)` repeated after successful issuance |
+| Transaction | [`0x81386f3b1f3332f2fdb4d55f40ce64aaf39179b9cf2063691fefb11ba1b074d9`](https://explorer-studio.genlayer.com/tx/0x81386f3b1f3332f2fdb4d55f40ce64aaf39179b9cf2063691fefb11ba1b074d9) |
+| Execution | `FINALIZED`, GenVM `ERROR` — **expected rollback** |
+| Consensus | `Accepted` — 3 validators agreed on the rollback, 2 were idle after quorum |
+| Reason | `[rollback] attempt already issued` |
+
+A post-rollback `LATEST_FINAL` read confirmed `CredentialRegistry.stats().credentials=1`. The same Credential #1 remained `VALID`, `verdict=PASS`, issued to `0xd6b8a3a5eb329410d9504784812b8569afa8c2af`, with unchanged `evidence_sha256=bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e` and `rubric_sha256=5100921b49985346d315d0577db9048a70db71fb5d1060a7ad00db78513ee2b6`. `get_credential(1)` matched `credential_for(1,holder)`. Read API confirmed the repeated transaction was `FINALIZED / ERROR`, not a successful second issuance.
+
+**Proof boundary:** Five signed executions establish Challenge #1, Applicant Attempt #1, AI consensus `PASS`, one persisted `VALID` Credential #1 and an expected rollback preventing a duplicate issuance. No credential revocation or separate `FAIL`/`REVIEW` assessment is claimed. `PASS` evaluates synthetic evidence under this rubric, not independent real-world qualification or identity.
