@@ -34,4 +34,28 @@ Independent `LATEST_FINAL` readback through the live `get_challenge(1)` endpoint
 - `fixture_sha256=e6cf91c8a0d41a5844f4674765899933bfa59e41fbbc8f6221c4b35b56d7548f`
 - `stats()={challenges:1,attempts:0}`
 
-**Proof boundary:** The above establishes creation of one rubric-bound challenge, not a successful applicant submission, GenLayer AI assessment, issuance, or revocation. No additional execution is claimed without a signed transaction and finalized readback.
+## Signed execution — Applicant attempt #1
+
+| Field | Observed value |
+| --- | --- |
+| Operation | `ChallengeBoard.submit_evidence(1, evidence, evidence_sha256)` |
+| Transaction | [`0xb343659255091f9a13451e88d8838550e748169085a473c3a4deeb60115c4251`](https://explorer-studio.genlayer.com/tx/0xb343659255091f9a13451e88d8838550e748169085a473c3a4deeb60115c4251) |
+| Signer / applicant | `0xD6b8A3A5eB329410D9504784812b8569afA8C2aF` |
+| Destination | `0xD0CD74bfD7BaEE48Bdc57304F062e8f17A1566A6` |
+| Execution | `FINALIZED`, GenVM `SUCCESS` / `Return` |
+| Consensus | `Accepted` |
+| Return / attempt ID | `1` |
+| Evidence SHA-256 | `bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e` |
+
+Independent `LATEST_FINAL` readback of `get_attempt(1)` confirmed:
+
+- `id=1`, `challenge_id=1`, `challenge_version=1`
+- `applicant=0xd6b8a3a5eb329410d9504784812b8569afa8c2af`
+- `evidence_sha256=bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e`
+- `rubric_sha256=5100921b49985346d315d0577db9048a70db71fb5d1060a7ad00db78513ee2b6`
+- `status=SUBMITTED`, `verdict=PENDING`
+- `stats()={challenges:1,attempts:1}`
+
+This confirms a signed, stored applicant attempt only. It does not imply that AI consensus has assessed the evidence, that the attempt has passed, or that a credential has been issued.
+
+**Proof boundary:** The observed transactions establish one rubric-bound challenge and one submitted applicant attempt. No AI assessment, PASS verdict, credential issuance, or revocation is claimed without its own signed execution and finalized readback.
