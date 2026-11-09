@@ -135,3 +135,19 @@ Independent `LATEST_FINAL` readback of `get_challenge(2)` confirmed
 `fixture_sha256=e6cf91c8a0d41a5844f4674765899933bfa59e41fbbc8f6221c4b35b56d7548f`.
 At this verification point, `stats()={challenges:2,attempts:1}` and `CredentialRegistry.stats().credentials=1`.
 The new challenge had no recorded new applicant attempt at this point. No subsequent AI assessment or issuance for Challenge #2 is claimed by this entry.
+
+
+## Signed execution — Live demo applicant attempt #2
+
+| Field | Observed value |
+| --- | --- |
+| Operation | `ChallengeBoard.submit_evidence(2, evidence, evidence_sha256)` |
+| Transaction | [`0xe8d2a9801847d45f0340bb14d73379e69bc924dae6fd0c783e17bc065dcd96a9`](https://explorer-studio.genlayer.com/tx/0xe8d2a9801847d45f0340bb14d73379e69bc924dae6fd0c783e17bc065dcd96a9) |
+| Signer / applicant | `0xD6b8A3A5eB329410D9504784812b8569afA8C2aF` |
+| Contract | `0xD0CD74bfD7BaEE48Bdc57304F062e8f17A1566A6` |
+| Execution | `FINALIZED` / GenVM `SUCCESS` |
+| Consensus | `Accepted` |
+| Return value | Attempt ID `2` |
+| Evidence SHA-256 | `bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e` |
+
+Independent `LATEST_FINAL` readback from `get_attempt(2)` verified `id=2`, `challenge_id=2`, `challenge_version=1`, `applicant=0xd6b8a3a5eb329410d9504784812b8569afa8c2af`, and an unchanged rubric digest `5100921b49985346d315d0577db9048a70db71fb5d1060a7ad00db78513ee2b6`. Immediately after signing, `status=SUBMITTED` and `verdict=PENDING`; `stats()={challenges:2,attempts:2}`. This transaction does **not** establish a PASS or credential for Attempt #2 without later AI adjudication.
