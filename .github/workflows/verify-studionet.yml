@@ -1,0 +1,28 @@
+name: Read-only Studionet source and binding check
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'contracts/**'
+      - 'scripts/preflight.mjs'
+      - '.github/workflows/verify-studionet.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CHALLENGE_BOARD_ADDRESS: '0xD0CD74bfD7BaEE48Bdc57304F062e8f17A1566A6'
+      CREDENTIAL_REGISTRY_ADDRESS: '0x2cb21FaE6d3c712f00004806e9e583a89910ce1c'
+      FIRST_SOURCE_PATH: 'contracts/challenge_board.py'
+      SECOND_SOURCE_PATH: 'contracts/credential_registry.py'
+      SECOND_LINK_FIELD: 'board'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run preflight
