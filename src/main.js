@@ -3,12 +3,14 @@ import {project} from './project.js';
 import {parseValue,classifyTx,verifyStored} from '../lib/verification.js';
 import {createClient} from 'genlayer-stable';
 import {studionet} from 'genlayer-stable/chains';
+import {HASH_RE,readHistory,rememberTx,updateTxStatus,displayStatus} from '../lib/tx-history.js';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ADDRESS=/^0x[a-fA-F0-9]{40}$/;
 const CHAIN=61999, txPrefix='https://explorer-studio.genlayer.com/tx/';
 const pendingKey=project.id+'-pending-write-v1';
+const txStorage=()=>{try{return localStorage}catch{return {getItem:()=>null,setItem:()=>{}}}};
 let config=null,account='',busy=false,checking=false;
 const same=(x,y)=>String(x).toLowerCase()===String(y).toLowerCase();
 const short=x=>ADDRESS.test(x||'')?x.slice(0,6)+'…'+x.slice(-4):'Connect wallet';
@@ -36,7 +38,7 @@ function render(){
  const queryOptions=project.reads.map((r,i)=>'<option value="'+i+'">'+esc(r[0])+'</option>').join('');
  $('app').innerHTML=
  '<div class="academy-app"><header class="academy-header"><a class="academy-brand" href="#overview"><span class="brand-monogram">S<span>✳</span></span><span>SKILLSTAMP<small>PROOF OF PRACTICE</small></span></a>'+
- '<nav class="nav" aria-label="Primary navigation"><button class="active" type="button" data-page="overview">Discover</button><button type="button" data-page="workflow">Assessment studio</button><button type="button" data-page="explorer">Verify a credential</button></nav>'+
+ '<nav class="nav" aria-label="Primary navigation"><button class="active" type="button" data-page="overview">Discover</button><button type="button" data-page="workflow">Assessment studio</button><button type="button" data-page="explorer">Verify a credential</button><button type="button" data-page="transactions">Transactions</button></nav>'+
  '<div class="header-actions"><span id="breadcrumb" class="sr-only" aria-live="polite">Discover</span><span class="network" id="network">Connecting to Studionet…</span><button class="wallet" id="wallet">Connect wallet ↗</button></div></header>'+
  '<main class="main-shell"><div class="content"><section class="page" id="overview">'+
  '<div class="hero-grid"><div class="hero-copy"><div class="eyebrow"><span class="spark">✳</span> SKILLS DESERVE BETTER PROOF <span class="eyebrow-line"></span> GENLAYER / 61999</div>'+
@@ -64,27 +66,38 @@ function render(){
  '<form id="readForm" class="readForm"><div class="fields"><label class="wide">Which record?<select id="readMethod">'+queryOptions+'</select></label>'+
  '<label>Record ID<input id="readId" type="number" value="1" min="1" step="1"></label>'+
  '<label>Wallet address<input id="readActor" type="text" placeholder="0x…"></label></div><button class="primary" type="submit">Read final state <span aria-hidden="true">↗</span></button></form>'+
- '<pre id="readResult" class="readResult">Select a record to load its on-chain state.</pre></section></div></section></div></main>'+
+ '<pre id="readResult" class="readResult">Select a record to load its on-chain state.</pre></section></div></section>'+
+ '<section class="page" id="transactions" hidden><div class="verify-hero"><div class="eyebrow">ON-CHAIN TRANSACTIONS / STUDIONET 61999</div><h1>Every signature.<br><em>A trace you can follow.</em></h1><p>Transactions initiated in this browser are saved automatically. History stays on this device; anyone can look up an existing GenLayer transaction hash below.</p></div>'+
+ '<div class="history-summary"><div><span class="eyebrow">LOCAL TRANSACTION INDEX</span><strong id="transactionCount">0</strong><small>Saved hashes · this browser only</small></div><div><span class="eyebrow">VERIFICATION POLICY</span><strong>FINALIZED + SUCCESS</strong><small>State verification is displayed separately when available</small></div></div>'+
+ '<section class="panel transaction-panel"><div class="tx-panel-title"><div><span class="eyebrow">TRANSACTION LOG</span><h2>Recent activity</h2></div><button type="button" id="refreshTxHistory">Refresh statuses ↻</button></div>'+
+ '<p class="history-hint">This is a local index of signed transaction hashes, not a global database. Public transactions can always be checked using their hash.</p>'+
+ '<div id="transactionList" class="transaction-list" aria-live="polite"><p>Loading local history…</p></div></section>'+
+ '<section class="panel transaction-panel"><span class="eyebrow">VERIFY AN EXISTING HASH</span><h2>Look up a transaction</h2><p>Paste a GenLayer Studionet transaction hash to fetch its finalized/execution status. No wallet connection required.</p>'+
+ '<form id="trackTxForm" class="tx-import"><label for="trackTxHash">Transaction hash</label><div class="tx-import-row"><input id="trackTxHash" name="hash" type="text" autocomplete="off" spellcheck="false" placeholder="0x… 64 hexadecimal digits" required><button class="primary" type="submit">Track hash ↗</button></div></form>'+
+ '<div id="trackTxMessage" class="history-message" role="status"></div></section></section>'+
+ '</div></main>'+
  '<aside class="activity" aria-live="polite"><div class="activity-head"><span class="eyebrow">SIGNATURE / ACTIVITY</span><span class="activity-mini">STUDIONET</span></div>'+
- '<h2 class="txState" id="txTitle">Your signature, your proof.</h2><p class="txInfo" id="txInfo">Choose an assessment action to begin. No transaction has been sent.</p>'+
+ '<div class="txStateRow"><span class="txSpinner" id="txSpinner" role="status" aria-label="Checking transaction" hidden></span><h2 class="txState" id="txTitle">Your signature, your proof.</h2></div><p class="txInfo" id="txInfo">Choose an assessment action to begin. No transaction has been sent.</p>'+
  '<div class="txSteps"><div id="phase1">01 / Sign</div><div id="phase2">02 / Finalize</div><div id="phase3">03 / Verify</div></div>'+
  '<div class="txHash" id="txHash">No pending transaction</div><div class="activity-bottom"><a id="txLink" target="_blank" rel="noopener" hidden>View on Explorer ↗</a>'+
- '<button id="retry" type="button" hidden>Recheck transaction</button></div><div class="walletIdentity" id="walletIdentity">No wallet selected.</div></aside></div>';
+ '<button id="retry" type="button" hidden>Recheck transaction</button><button id="openTransactions" type="button" class="activity-history">Transaction history ↗</button></div><div class="walletIdentity" id="walletIdentity">No wallet selected.</div></aside></div>';
  bind();
 }
-function notice(title,info,phase=0,hash=''){
+function notice(title,info,phase=0,hash='',working=false){
  $('txTitle').textContent=title;$('txInfo').textContent=info;
+ $('txSpinner').hidden=!working;
  $('txHash').textContent=hash||'No pending transaction';
  $('txLink').hidden=!hash;if(hash)$('txLink').href=txPrefix+encodeURIComponent(hash);
  for(let i=1;i<=3;i++)$('phase'+i).className=i<phase?'done':i===phase?'current':'';
 }
 function showPage(page){
- const id=['overview','workflow','explorer'].includes(page)?page:'overview';
- for(const p of ['overview','workflow','explorer'])$(p).hidden=p!==id;
+ const id=['overview','workflow','explorer','transactions'].includes(page)?page:'overview';
+ for(const p of ['overview','workflow','explorer','transactions'])$(p).hidden=p!==id;
  for(const b of document.querySelectorAll('[data-page]'))b.classList.toggle('active',b.dataset.page===id);
  const breadcrumb=$('breadcrumb');
  if(breadcrumb)breadcrumb.textContent=id[0].toUpperCase()+id.slice(1);
  if(location.hash!=='#'+id)history.replaceState(null,'','#'+id);
+ if(id==='transactions')renderHistory();
 }
 function setBusy(value){
  busy=value;
@@ -117,18 +130,86 @@ function bind(){
  $('readForm').onsubmit=e=>{e.preventDefault();runRead()};
  $('readMethod').onchange=updateReadFields;
  $('retry').onclick=()=>{const p=loadPending();if(p)follow(p)};
+ $('openTransactions').onclick=()=>showPage('transactions');
+ $('trackTxForm').onsubmit=e=>{e.preventDefault();const hash=$('trackTxHash').value.trim();if(!HASH_RE.test(hash)){ $('trackTxMessage').textContent='Enter a valid 0x-prefixed, 64-digit hexadecimal hash.';return; }rememberTx(txStorage(),{hash,method:'unknown',status:'pending'});$('trackTxHash').value='';renderHistory();void checkHistoryHash(hash);};
+ $('refreshTxHistory').onclick=()=>{void refreshHistoryStatuses()};
+ $('transactionList').onclick=e=>{const b=e.target.closest('button[data-check-hash]');if(b)void checkHistoryHash(b.dataset.checkHash)};
  window.ethereum?.on?.('accountsChanged',a=>setAccount(a?.[0]||''));
  window.ethereum?.on?.('chainChanged',()=>notice('Network changed','Studionet 61999 required to sign'));
  showPage(location.hash.slice(1)||'overview');
  updateReadFields();
  const pending=loadPending();
- if(pending){$('retry').hidden=false;notice('Pending transaction saved','Recheck this transaction before signing anything else.',2,pending.hash)}
+ if(pending){const old=readHistory(txStorage()).find(x=>x.hash.toLowerCase()===pending.hash?.toLowerCase());
+  if(!old||['pending','state-unverified'].includes(old.status))rememberTx(txStorage(),{hash:pending.hash,method:pending.method,actor:pending.actor,status:old?.status||'pending'});
+  $('retry').hidden=false;notice('Pending transaction saved','Recheck this transaction before signing anything else.',2,pending.hash);}
 }
 function updateReadFields(){
  const r=project.reads[Number($('readMethod').value)];
  $('readId').parentElement.hidden=!r[3].includes('id');
  $('readActor').parentElement.hidden=!r[3].includes('address');
 }
+
+function renderHistory(){
+ const records=readHistory(txStorage());
+ $('transactionCount').textContent=String(records.length);
+ const rows=records.map((t,i)=>{
+  const label=displayStatus(t.status);
+  const when=Number.isFinite(t.savedAt)?new Date(t.savedAt).toLocaleString():'Time unavailable';
+  return '<article class="tx-entry"><div class="tx-entry-top"><span class="tx-entry-number">'+String(i+1).padStart(2,'0')+'</span>'+
+   '<div class="tx-entry-meta"><strong>'+esc(t.method==='unknown'?'Tracked transaction':t.method.replaceAll('_',' '))+'</strong><small>'+esc(when)+' · Chain 61999</small></div>'+
+   '<span class="tx-status tx-status-'+esc(t.status)+'">'+esc(label)+'</span></div>'+
+   '<div class="tx-entry-hash">'+esc(t.hash)+'</div>'+
+   (t.actor?'<div class="tx-entry-actor">Signer: '+esc(t.actor)+'</div>':'')+
+   '<div class="tx-entry-actions"><a href="'+txPrefix+encodeURIComponent(t.hash)+'" target="_blank" rel="noopener">View on Explorer ↗</a>'+
+   '<button type="button" data-check-hash="'+esc(t.hash)+'">Recheck status ↻</button></div></article>';
+ }).join('');
+ $('transactionList').innerHTML=rows||'<div class="history-empty"><strong>No saved transactions yet</strong><p>Signed transactions will appear here automatically. You can also track an existing public hash below.</p></div>';
+}
+async function checkHistoryHash(hash){
+ if(!HASH_RE.test(hash))return;
+ const message=$('trackTxMessage');
+ message.textContent='Checking GenLayer status for '+hash.slice(0,10)+'…';
+ const refreshButton=$('refreshTxHistory');refreshButton.disabled=true;
+ try{
+  const response=await fetch('/api/tx?hash='+encodeURIComponent(hash),{cache:'no-store'});
+  const tx=await response.json();
+  if(!response.ok||!tx.ok)throw Error(tx.error||'Read unavailable');
+  const verdict=classifyTx(tx);
+  if(verdict==='error'){
+   updateTxStatus(txStorage(),hash,'error');
+   const pending=loadPending();
+   if(pending?.hash?.toLowerCase()===hash.toLowerCase()){clearPending();$('retry').hidden=true}
+  }else if(verdict==='success'){
+   const pending=loadPending();
+   let verified=false;
+   if(pending?.hash?.toLowerCase()===hash.toLowerCase()){
+    try{verified=Boolean((await readProof(pending)).ok)}catch{}
+    if(verified){clearPending();$('retry').hidden=true}
+   }
+   updateTxStatus(txStorage(),hash,verified?'verified':'finalized-success');
+  }else{
+   const old=readHistory(txStorage()).find(r=>r.hash===hash.toLowerCase());
+   if(!old||['pending','state-unverified'].includes(old.status))
+    updateTxStatus(txStorage(),hash,'pending');
+  }
+  const latest=readHistory(txStorage()).find(r=>r.hash===hash.toLowerCase());
+  message.textContent='Chain check: '+(latest?displayStatus(latest.status):'Unknown')+
+   (verdict==='pending'?' (not yet finalized or temporarily unavailable)':'')+
+   '. A finalized success without matching saved write context is not labeled state-verified.';
+ }catch(error){message.textContent='Could not refresh status: '+String(error.message||error)}
+ finally{refreshButton.disabled=false;renderHistory()}
+}
+async function refreshHistoryStatuses(){
+ const records=readHistory(txStorage()).slice(0,15);
+ if(!records.length){$('trackTxMessage').textContent='No saved transactions to refresh.';return}
+ // Limit RPC load and keep controls responsive.
+ for(const item of records)await checkHistoryHash(item.hash);
+}
+function rememberWrite(rec,status='pending'){
+ rememberTx(txStorage(),{hash:rec.hash,method:rec.method,actor:rec.actor,status});
+ if(!$('transactions').hidden)renderHistory();
+}
+
 async function api(scope,method,args=[]){
  const url=new URL('/api/state',location.origin);
  url.searchParams.set('scope',scope);url.searchParams.set('method',method);
@@ -266,7 +347,7 @@ async function write(action){
   notice('Confirm in wallet','Check the destination contract, signer and method. No automatic retries.',1);
   const hash=await client.writeContract({address:config[action.scope],functionName:action.method,args,value:0n});
   if(!/^0x[a-f0-9]{64}$/i.test(hash||''))throw Error('Wallet did not return valid transaction hash');
-  rec.hash=hash;savePending(rec);$('retry').hidden=false;
+  rec.hash=hash;savePending(rec);rememberWrite(rec);$('retry').hidden=false;
   setBusy(false);await follow(rec);
  }finally{setBusy(false)}
 }
@@ -287,7 +368,7 @@ async function readProof(rec){
 async function follow(rec){
  if(checking)return;
  checking=true;setBusy(true);
- notice('Checking finality','Do not sign again. Waiting for execution result and exact stored-state readback.',2,rec.hash);
+ notice('Checking finality','Do not sign again. Waiting for execution result and exact stored-state readback.',2,rec.hash,true);
  try{
   for(let i=0;i<55;i++){
    let tx;
@@ -298,7 +379,7 @@ async function follow(rec){
    }catch{await new Promise(r=>setTimeout(r,3200));continue}
    const state=classifyTx(tx);
    if(state==='error'){
-    clearPending();$('retry').hidden=true;
+    rememberWrite(rec,'error');clearPending();$('retry').hidden=true;
     notice('Finalized execution rejected','Transaction rolled back or failed. No successful state is claimed.',2,rec.hash);
     return;
    }
@@ -307,18 +388,20 @@ async function follow(rec){
      try{
       const proof=await readProof(rec);
       if(proof.ok){
-       clearPending();$('retry').hidden=true;
+       rememberWrite(rec,'verified');clearPending();$('retry').hidden=true;
        notice('Signed and verified','FINALIZED / SUCCESS and exact LATEST_FINAL persisted state match. '+rec.method+'.',3,rec.hash);
        return;
       }
      }catch{}
      await new Promise(r=>setTimeout(r,2500));
     }
+    rememberWrite(rec,'state-unverified');
     notice('Finalized, readback not verified','Keep the hash and use Recheck. The app will not infer success without matching state.',2,rec.hash);
     return;
    }
    await new Promise(r=>setTimeout(r,3200));
   }
+  rememberWrite(rec,'pending');
   notice('Finality unresolved','Transaction retained for safe recheck. Do not send duplicate writes.',2,rec.hash);
  }finally{checking=false;setBusy(false)}
 }
@@ -342,5 +425,7 @@ async function init(){
   $('workflowNotice').textContent='No serverless configuration available. Deploy contracts and API before signing.';
  }
  setBusy(false);
+ const pending=loadPending();
+ if(pending?.hash&&config?.configured)void follow(pending);
 }
 init();
