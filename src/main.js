@@ -34,7 +34,8 @@ function formHTML(action){
 function render(){
  document.title='SKILLSTAMP — Verifiable skill credentials';
  const cards=project.cards.map((c,i)=>'<article class="path-card"><div class="path-top"><span>MODULE / '+esc(c[0])+'</span><span>0'+(i+1)+' — 04</span></div><div class="path-symbol">'+['✧','◇','◎','✳'][i]+'</div><h3>'+esc(c[1])+'</h3><p>'+esc(c[2])+'</p></article>').join('');
- const methods=project.forms.map((a,i)=>'<div class="rail-step"><span>'+String(i+1).padStart(2,'0')+'</span><div><b>'+esc(a.title)+'</b><small>'+esc(a.role)+'</small></div></div>').join('');
+ const actionTabs=project.forms.map((a,i)=>'<button type="button" role="tab" aria-selected="false" aria-controls="actionPanel_'+esc(a.method)+'" data-action-tab="'+esc(a.method)+'"><span class="studio-tab-num">'+String(i+1).padStart(2,'0')+'</span><span class="studio-tab-text">'+esc(a.title)+'</span><span class="studio-tab-role">'+esc(a.role)+'</span></button>').join('');
+ const actionPanels=project.forms.map(a=>'<div class="studio-action-panel" id="actionPanel_'+esc(a.method)+'" data-action-panel="'+esc(a.method)+'" role="tabpanel" hidden>'+formHTML(a)+'</div>').join('');
  const queryOptions=project.reads.map((r,i)=>'<option value="'+i+'">'+esc(r[0])+'</option>').join('');
  $('app').innerHTML=
  '<div class="academy-app"><header class="academy-header"><a class="academy-brand" href="#overview"><span class="brand-monogram">S<span>✳</span></span><span>SKILLSTAMP<small>PROOF OF PRACTICE</small></span></a>'+
@@ -57,9 +58,11 @@ function render(){
  '<div class="path-grid">'+cards+'</div></section>'+
  '<div class="boundary-strip"><span>IMPORTANT / SCOPE</span><p>'+esc(project.scope)+'</p></div>'+
  '</section>'+
- '<section class="page" id="workflow" hidden><div class="section-heading"><span class="eyebrow">ASSESSMENT / WORKSPACE</span><h1>Your credential begins<br>with <em>evidence.</em></h1><p>Complete only the step that matches your wallet role. Every action is signed; success is confirmed against final on-chain state.</p></div>'+
- '<div class="workspace-grid"><aside class="workspace-guide"><div class="guide-label">THE CREDENTIAL JOURNEY</div><div class="guide-steps">'+methods+'</div><div class="guide-foot"><span>✳</span><p>Keep the exact evidence text and SHA-256 together. A PASS is bound to this specific rubric.</p></div></aside>'+
- '<div class="workspace-body"><div class="notice warning" id="workflowNotice">Checking deployed contracts before wallet signing…</div><div class="gridForms">'+project.forms.map(formHTML).join('')+'</div></div></div></section>'+
+ '<section class="page studio-page" id="workflow" hidden><div class="studio-heading"><div><span class="eyebrow">SKILLSTAMP / ASSESSMENT STUDIO</span><h1>One action.<br><em>One clear result.</em></h1><p>Select a function, use the appropriate wallet, and sign only what you intend to do.</p></div><div class="studio-heading-tag">GENLAYER · STUDIONET 61999</div></div>'+
+ '<div class="studio-gate" id="workspaceDisconnected"><span class="studio-gate-symbol">✳</span><div><strong>Connect your wallet to start</strong><p>The studio will display one operation at a time. Public credential verification remains available without a wallet.</p></div><button class="primary" id="connectWorkspace" type="button">Connect wallet ↗</button></div>'+
+ '<div class="studio-connected" id="workspaceConnected" hidden><div class="studio-account"><span class="studio-account-dot"></span><div><small>CONNECTED WALLET</small><strong id="studioWallet">—</strong></div><span id="studioRole" class="studio-role">Wallet connected</span></div>'+
+ '<div id="workflowNotice" class="notice warning">Checking contract connection…</div><div id="workspaceFeedback" class="workspace-feedback" role="status" aria-live="polite" hidden></div>'+
+ '<div class="studio-control"><nav class="studio-tabs" id="actionTabs" role="tablist" aria-label="Assessment functions">'+actionTabs+'</nav><div class="studio-detail"><div class="studio-detail-caption"><span id="activeActionMeta">SELECT A FUNCTION</span><span>STUDIONET · SIGNED OPERATION</span></div><div id="studioPanels">'+actionPanels+'</div></div></div></div></section>'+
  '<section class="page" id="explorer" hidden><div class="verify-hero"><div class="eyebrow">CREDENTIAL LOOKUP / LATEST_FINAL</div><h1>Verify the<br><em>evidence trail.</em></h1><p>No wallet connection needed. Read records directly from the deployed contracts and inspect their current status.</p></div>'+
  '<div class="verify-layout"><div class="verify-illustration"><div class="verify-big">✳</div><span>AUTHENTICITY IS A PROCESS</span><p>Credential records contain the holder, challenge, rubric digest, evidence digest and status. A revoked credential remains readable.</p></div>'+
  '<section class="panel lookup-panel"><div class="eyebrow">ON-CHAIN QUERY</div><h2>Check a record</h2>'+
@@ -76,19 +79,82 @@ function render(){
  '<form id="trackTxForm" class="tx-import"><label for="trackTxHash">Transaction hash</label><div class="tx-import-row"><input id="trackTxHash" name="hash" type="text" autocomplete="off" spellcheck="false" placeholder="0x… 64 hexadecimal digits" required><button class="primary" type="submit">Track hash ↗</button></div></form>'+
  '<div id="trackTxMessage" class="history-message" role="status"></div></section></section>'+
  '</div></main>'+
- '<aside class="activity" aria-live="polite"><div class="activity-head"><span class="eyebrow">SIGNATURE / ACTIVITY</span><span class="activity-mini">STUDIONET</span></div>'+
- '<div class="txStateRow"><span class="txSpinner" id="txSpinner" role="status" aria-label="Checking transaction" hidden></span><h2 class="txState" id="txTitle">Your signature, your proof.</h2></div><p class="txInfo" id="txInfo">Choose an assessment action to begin. No transaction has been sent.</p>'+
- '<div class="txSteps"><div id="phase1">01 / Sign</div><div id="phase2">02 / Finalize</div><div id="phase3">03 / Verify</div></div>'+
- '<div class="txHash" id="txHash">No pending transaction</div><div class="activity-bottom"><a id="txLink" target="_blank" rel="noopener" hidden>View on Explorer ↗</a>'+
- '<button id="retry" type="button" hidden>Recheck transaction</button><button id="openTransactions" type="button" class="activity-history">Transaction history ↗</button></div><div class="walletIdentity" id="walletIdentity">No wallet selected.</div></aside></div>';
+ '<aside class="activity" id="txPanel" aria-live="polite" role="status" hidden><div class="activity-head"><span class="eyebrow">LIVE TRANSACTION</span><button type="button" id="closeTx" class="tx-close" aria-label="Close transaction status">×</button></div>'+
+ '<div class="txStateRow"><span class="txSpinner" id="txSpinner" aria-label="Processing" hidden></span><h2 class="txState" id="txTitle">Waiting for wallet</h2></div><p class="txInfo" id="txInfo">Your signed transaction will be tracked here.</p>'+
+ '<div class="txHash" id="txHash" hidden></div><div class="activity-bottom"><a id="txLink" target="_blank" rel="noopener" hidden>View on Explorer ↗</a>'+
+ '<button id="retry" type="button" hidden>Recheck transaction</button><button id="openTransactions" type="button" class="activity-history">Transaction history ↗</button></div><div class="walletIdentity" id="walletIdentity" hidden></div></aside></div>';
  bind();
 }
-function notice(title,info,phase=0,hash='',working=false){
+const ACTION_NAMES={create_challenge:'Create challenge',submit_evidence:'Submit evidence',assess_attempt:'AI assessment',issue_credential:'Issue credential',revoke_credential:'Revoke credential',close_challenge:'Close challenge'};
+let activeAction='create_challenge',issuerWallet='',activityTimer=null,noticeSerial=0;
+function actionName(method){return ACTION_NAMES[method]||method.replaceAll('_',' ')}
+function workspaceMessage(message,error=false){
+ const area=$('workspaceFeedback');
+ if(!area)return;
+ area.textContent=String(message);
+ area.hidden=false;
+ area.className='workspace-feedback'+(error?' is-error':'');
+}
+function clearWorkspaceMessage(){const area=$('workspaceFeedback');if(area){area.hidden=true;area.textContent=''}}
+function hideActivity(){
+ if(activityTimer)clearTimeout(activityTimer);
+ activityTimer=null;noticeSerial++;
+ $('txPanel').hidden=true;
+}
+function notice(title,info,phase=0,hash='',working=false,kind='pending'){
+ if(activityTimer)clearTimeout(activityTimer);
+ activityTimer=null;
+ noticeSerial++;
+ const token=noticeSerial,panel=$('txPanel');
+ panel.hidden=false;panel.dataset.state=kind;
  $('txTitle').textContent=title;$('txInfo').textContent=info;
  $('txSpinner').hidden=!working;
- $('txHash').textContent=hash||'No pending transaction';
+ $('txHash').hidden=!hash;$('txHash').textContent=hash||'';
  $('txLink').hidden=!hash;if(hash)$('txLink').href=txPrefix+encodeURIComponent(hash);
- for(let i=1;i<=3;i++)$('phase'+i).className=i<phase?'done':i===phase?'current':'';
+ if(!working&&['success','error','cancelled'].includes(kind)){
+  activityTimer=setTimeout(()=>{if(noticeSerial===token&& !checking && !loadPending())hideActivity()},9000);
+ }
+}
+function selectAction(method){
+ if(!project.forms.some(a=>a.method===method))return;
+ activeAction=method;
+ for(const b of document.querySelectorAll('[data-action-tab]')){
+  const chosen=b.dataset.actionTab===method;
+  b.classList.toggle('active',chosen);
+  b.setAttribute('aria-selected',String(chosen));
+  b.tabIndex=chosen?0:-1;
+ }
+ for(const pane of document.querySelectorAll('[data-action-panel]'))pane.hidden=pane.dataset.actionPanel!==method;
+ const action=project.forms.find(a=>a.method===method);
+ $('activeActionMeta').textContent=action.role.toUpperCase()+' / '+actionName(method).toUpperCase();
+ clearWorkspaceMessage();
+}
+function updateStudioAccount(switched=false){
+ const connected=Boolean(account);
+ $('workspaceDisconnected').hidden=connected;
+ $('workspaceConnected').hidden=!connected;
+ if(!connected)return;
+ $('studioWallet').textContent=account;
+ const issuer=issuerWallet&&same(account,issuerWallet);
+ $('studioRole').textContent=issuer?'Issuer wallet':'Applicant / participant wallet';
+ for(const b of document.querySelectorAll('[data-action-tab]')){
+  const action=project.forms.find(a=>a.method===b.dataset.actionTab);
+  b.classList.toggle('studio-role-match',issuer?action.role==='Issuer':action.role==='Applicant');
+ }
+ if(switched||!document.querySelector('[data-action-tab].active')){
+  selectAction(issuer?'create_challenge':'submit_evidence');
+ }
+}
+async function loadIssuer(){
+ if(!config?.configured)return;
+ try{
+  const stats=await api('first','stats');
+  if(Number(stats.challenges)>0){
+   const challenge=await api('first','get_challenge',[1]);
+   if(ADDRESS.test(challenge.issuer))issuerWallet=challenge.issuer;
+  }
+ }catch{}
+ updateStudioAccount();
 }
 function showPage(page){
  const id=['overview','workflow','explorer','transactions'].includes(page)?page:'overview';
@@ -106,17 +172,20 @@ function setBusy(value){
 function bind(){
  for(const b of document.querySelectorAll('[data-page]'))b.onclick=()=>showPage(b.dataset.page);
  window.addEventListener('hashchange',()=>showPage(location.hash.slice(1)));
- $('wallet').onclick=()=>connect().catch(e=>notice('Wallet not connected',e.message));
+ $('wallet').onclick=()=>connect().catch(e=>workspaceMessage('Wallet: '+e.message,true));
+ $('connectWorkspace').onclick=()=>connect().catch(e=>workspaceMessage('Wallet: '+e.message,true));
+ for(const b of document.querySelectorAll('[data-action-tab]'))b.onclick=()=>selectAction(b.dataset.actionTab);
+ $('closeTx').onclick=hideActivity;
  for(const action of project.forms){
   const f=document.querySelector('form[data-form="'+action.method+'"]');
-  f.onsubmit=e=>{e.preventDefault();write(action).catch(err=>{setBusy(false);notice('Not submitted',err.message)})};
+  f.onsubmit=e=>{e.preventDefault();write(action).catch(err=>{setBusy(false);if(!$('txPanel').hidden)notice('Signature not completed',String(err.message||err),0,'',false,'error');else workspaceMessage(String(err.message||err),true)})};
  }
  for(const button of document.querySelectorAll('[data-fill]'))button.onclick=()=>{
   const m=button.dataset.fill,a=project.forms.find(x=>x.method===m),data=project.presets[a.preset]||{};
   for(const [key,val] of Object.entries(data)){
    const field=$('f_'+m+'_'+key);if(field)field.value=String(val);
   }
-  notice('Example loaded','Edit the values and verify the signer. Nothing was sent.');
+  workspaceMessage('Example loaded. Review the fields before signing.');
  };
  for(const button of document.querySelectorAll('[data-digest]'))button.onclick=async()=>{
   try{const m=button.dataset.digest,a=project.forms.find(x=>x.method===m);
@@ -124,8 +193,8 @@ function bind(){
    if(!text)throw Error('Enter the exact evidence or delivery content first');
    const field=a.fields.find(x=>x[2]==='hash');
    $('f_'+m+'_'+field[0]).value=await sha256(text);
-   notice('Content hash ready','SHA-256 computed locally from the exact text. No transaction sent.');
-  }catch(e){notice('Unable to calculate hash',e.message)}
+   workspaceMessage('SHA-256 generated from the exact text. Nothing has been sent.');
+  }catch(e){workspaceMessage('Cannot calculate digest: '+e.message,true)}
  };
  $('readForm').onsubmit=e=>{e.preventDefault();runRead()};
  $('readMethod').onchange=updateReadFields;
@@ -135,13 +204,14 @@ function bind(){
  $('refreshTxHistory').onclick=()=>{void refreshHistoryStatuses()};
  $('transactionList').onclick=e=>{const b=e.target.closest('button[data-check-hash]');if(b)void checkHistoryHash(b.dataset.checkHash)};
  window.ethereum?.on?.('accountsChanged',a=>setAccount(a?.[0]||''));
- window.ethereum?.on?.('chainChanged',()=>notice('Network changed','Studionet 61999 required to sign'));
+ window.ethereum?.on?.('chainChanged',()=>workspaceMessage('For signing, select GenLayer Studionet · 61999.',true));
  showPage(location.hash.slice(1)||'overview');
+ selectAction(activeAction);updateStudioAccount();
  updateReadFields();
  const pending=loadPending();
- if(pending){const old=readHistory(txStorage()).find(x=>x.hash.toLowerCase()===pending.hash?.toLowerCase());
+ if(pending?.hash){const old=readHistory(txStorage()).find(x=>x.hash.toLowerCase()===pending.hash?.toLowerCase());
   if(!old||['pending','state-unverified'].includes(old.status))rememberTx(txStorage(),{hash:pending.hash,method:pending.method,actor:pending.actor,status:old?.status||'pending'});
-  $('retry').hidden=false;notice('Pending transaction saved','Recheck this transaction before signing anything else.',2,pending.hash);}
+  $('retry').hidden=false;notice('Transaction still pending',actionName(pending.method)+' is waiting for a final result.',0,pending.hash,true);}
 }
 function updateReadFields(){
  const r=project.reads[Number($('readMethod').value)];
@@ -235,7 +305,8 @@ async function runRead(){
 function setAccount(a){
  account=ADDRESS.test(a||'')?a:'';
  $('wallet').textContent=account?short(account)+' · Switch':'Connect wallet';
- $('walletIdentity').textContent=account?'Active signer: '+account:'No wallet selected.';
+ $('walletIdentity').textContent=account?'Signer: '+account:'No signer selected';
+ updateStudioAccount(true);
 }
 async function connect(){
  if(!window.ethereum)throw Error('Install a wallet extension with EIP-1193 support');
@@ -327,7 +398,7 @@ async function write(action){
  if(busy)return;
  if(!config?.configured)throw Error('Deploy both contracts and configure the addresses before signing');
  const old=loadPending();
- if(old){$('retry').hidden=false;notice('Previous transaction pending','Recheck the saved hash before signing again.',2,old.hash);return}
+ if(old){$('retry').hidden=false;notice('Transaction still pending',actionName(old.method)+' must be resolved before signing another request.',0,old.hash,true);return}
  setBusy(true);
  try{
   const args=argsOf(action);
@@ -345,10 +416,11 @@ async function write(action){
    rec.prior=stat[counters[1]];
    if(!Number.isSafeInteger(rec.prior))throw Error('Cannot verify pre-write count');
   }
-  notice('Confirm in wallet','Check the destination contract, signer and method. No automatic retries.',1);
+  notice('Confirm '+actionName(action.method),'Approve the transaction in your wallet. Nothing is recorded until the network confirms it.',0,'',true);
   const hash=await client.writeContract({address:config[action.scope],functionName:action.method,args,value:0n});
   if(!/^0x[a-f0-9]{64}$/i.test(hash||''))throw Error('Wallet did not return valid transaction hash');
   rec.hash=hash;savePending(rec);rememberWrite(rec);$('retry').hidden=false;
+  notice(actionName(action.method)+' submitted','Signed transaction received. Waiting for GenLayer finality…',0,hash,true);
   setBusy(false);await follow(rec);
  }finally{setBusy(false)}
 }
@@ -369,7 +441,7 @@ async function readProof(rec){
 async function follow(rec){
  if(checking)return;
  checking=true;setBusy(true);
- notice('Checking finality','Do not sign again. Waiting for execution result and exact stored-state readback.',2,rec.hash,true);
+ notice(actionName(rec.method)+' is processing','GenLayer is confirming this transaction. Please do not sign it again.',0,rec.hash,true);
  try{
   for(let i=0;i<55;i++){
    let tx;
@@ -381,29 +453,32 @@ async function follow(rec){
    const state=classifyTx(tx);
    if(state==='error'){
     rememberWrite(rec,'error');clearPending();$('retry').hidden=true;
-    notice('Finalized execution rejected','Transaction rolled back or failed. No successful state is claimed.',2,rec.hash);
+    notice(actionName(rec.method)+' rejected','Transaction finalized with an error (rollback). No state change was claimed.',0,rec.hash,false,'error');
     return;
    }
    if(state==='success'){
+    notice(actionName(rec.method)+' finalized','GenVM SUCCESS. Checking the exact stored result…',0,rec.hash,true);
     for(let n=0;n<9;n++){
      try{
       const proof=await readProof(rec);
       if(proof.ok){
        rememberWrite(rec,'verified');clearPending();$('retry').hidden=true;
-       notice('Signed and verified','FINALIZED / SUCCESS and exact LATEST_FINAL persisted state match. '+rec.method+'.',3,rec.hash);
+       const result=rec.method==='assess_attempt'?('Verdict: '+String(proof.value?.verdict||'ASSESSED')):
+        (Number.isSafeInteger(proof.value?.id)?('#'+proof.value.id+' recorded'):'On-chain state updated');
+       notice(actionName(rec.method)+' successful',result+' · Verified at LATEST_FINAL.',0,rec.hash,false,'success');
        return;
       }
      }catch{}
      await new Promise(r=>setTimeout(r,2500));
     }
     rememberWrite(rec,'state-unverified');
-    notice('Finalized, readback not verified','Keep the hash and use Recheck. The app will not infer success without matching state.',2,rec.hash);
+    notice(actionName(rec.method)+' needs verification','GenVM SUCCESS, but final stored state could not yet be matched. Use Recheck; do not sign again.',0,rec.hash,false,'warning');
     return;
    }
    await new Promise(r=>setTimeout(r,3200));
   }
   rememberWrite(rec,'pending');
-  notice('Finality unresolved','Transaction retained for safe recheck. Do not send duplicate writes.',2,rec.hash);
+  notice(actionName(rec.method)+' still pending','Transaction is saved. Use Recheck in the transaction panel; do not submit again.',0,rec.hash,false,'warning');
  }finally{checking=false;setBusy(false)}
 }
 async function init(){
@@ -426,6 +501,8 @@ async function init(){
   $('workflowNotice').textContent='No serverless configuration available. Deploy contracts and API before signing.';
  }
  setBusy(false);
+ await loadIssuer();
+ try{const wallets=await window.ethereum?.request?.({method:'eth_accounts'});if(ADDRESS.test(wallets?.[0]||''))setAccount(wallets[0]);}catch{}
  const pending=loadPending();
  if(pending?.hash&&config?.configured)void follow(pending);
 }
