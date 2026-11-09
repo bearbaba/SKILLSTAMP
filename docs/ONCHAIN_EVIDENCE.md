@@ -116,3 +116,22 @@ The registry enforces one issuance per attempt, but a separately signed duplicat
 A post-rollback `LATEST_FINAL` read confirmed `CredentialRegistry.stats().credentials=1`. The same Credential #1 remained `VALID`, `verdict=PASS`, issued to `0xd6b8a3a5eb329410d9504784812b8569afa8c2af`, with unchanged `evidence_sha256=bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e` and `rubric_sha256=5100921b49985346d315d0577db9048a70db71fb5d1060a7ad00db78513ee2b6`. `get_credential(1)` matched `credential_for(1,holder)`. Read API confirmed the repeated transaction was `FINALIZED / ERROR`, not a successful second issuance.
 
 **Proof boundary:** Five signed executions establish Challenge #1, Applicant Attempt #1, AI consensus `PASS`, one persisted `VALID` Credential #1 and an expected rollback preventing a duplicate issuance. No credential revocation or separate `FAIL`/`REVIEW` assessment is claimed. `PASS` evaluates synthetic evidence under this rubric, not independent real-world qualification or identity.
+
+
+## Signed execution — Live demo challenge #2
+
+| Field | Observed value |
+| --- | --- |
+| Operation | `ChallengeBoard.create_challenge(title,rubric,reference_fixture)` |
+| Transaction | [`0x00795697b250a253b4a6ac7044f01bf9c57646c8c059aaca3db56a54e0d7a627`](https://explorer-studio.genlayer.com/tx/0x00795697b250a253b4a6ac7044f01bf9c57646c8c059aaca3db56a54e0d7a627) |
+| Chain execution | `FINALIZED` / GenVM `SUCCESS` (independent public API check) |
+| Issuer | `0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb` |
+| Challenge ID | `2` |
+| Title | `Event Indexing Reliability SKILLSTAMP` |
+
+Independent `LATEST_FINAL` readback of `get_challenge(2)` confirmed
+`active=true`, `version=1`,
+`rubric_sha256=5100921b49985346d315d0577db9048a70db71fb5d1060a7ad00db78513ee2b6` and
+`fixture_sha256=e6cf91c8a0d41a5844f4674765899933bfa59e41fbbc8f6221c4b35b56d7548f`.
+At this verification point, `stats()={challenges:2,attempts:1}` and `CredentialRegistry.stats().credentials=1`.
+The new challenge had no recorded new applicant attempt at this point. No subsequent AI assessment or issuance for Challenge #2 is claimed by this entry.
