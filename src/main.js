@@ -37,7 +37,7 @@ function render(){
  $('app').innerHTML=
  '<div class="academy-app"><header class="academy-header"><a class="academy-brand" href="#overview"><span class="brand-monogram">S<span>✳</span></span><span>SKILLSTAMP<small>PROOF OF PRACTICE</small></span></a>'+
  '<nav class="nav" aria-label="Primary navigation"><button class="active" type="button" data-page="overview">Discover</button><button type="button" data-page="workflow">Assessment studio</button><button type="button" data-page="explorer">Verify a credential</button></nav>'+
- '<div class="header-actions"><span class="network" id="network">Connecting to Studionet…</span><button class="wallet" id="wallet">Connect wallet ↗</button></div></header>'+
+ '<div class="header-actions"><span id="breadcrumb" class="sr-only" aria-live="polite">Discover</span><span class="network" id="network">Connecting to Studionet…</span><button class="wallet" id="wallet">Connect wallet ↗</button></div></header>'+
  '<main class="main-shell"><div class="content"><section class="page" id="overview">'+
  '<div class="hero-grid"><div class="hero-copy"><div class="eyebrow"><span class="spark">✳</span> SKILLS DESERVE BETTER PROOF <span class="eyebrow-line"></span> GENLAYER / 61999</div>'+
  '<h1>Make your<br><em>work</em> your<br>credential<span class="fullstop">.</span></h1>'+
@@ -82,7 +82,8 @@ function showPage(page){
  const id=['overview','workflow','explorer'].includes(page)?page:'overview';
  for(const p of ['overview','workflow','explorer'])$(p).hidden=p!==id;
  for(const b of document.querySelectorAll('[data-page]'))b.classList.toggle('active',b.dataset.page===id);
- $('breadcrumb').textContent=id[0].toUpperCase()+id.slice(1);
+ const breadcrumb=$('breadcrumb');
+ if(breadcrumb)breadcrumb.textContent=id[0].toUpperCase()+id.slice(1);
  if(location.hash!=='#'+id)history.replaceState(null,'','#'+id);
 }
 function setBusy(value){
