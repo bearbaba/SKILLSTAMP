@@ -166,3 +166,26 @@ Independent `LATEST_FINAL` readback from `get_attempt(2)` verified `id=2`, `chal
 The direct `LATEST_FINAL` read `get_attempt(2)` returned `status=ASSESSED`, `verdict=PASS`, `challenge_id=2` and `applicant=0xd6b8a3a5eb329410d9504784812b8569afa8c2af`. `credential_permission(2,0xD6b8A3A5eB329410D9504784812b8569afA8C2aF)` returned `allowed=true`, linked to Challenge #2 and the original `evidence_sha256=bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e`, `rubric_sha256=5100921b49985346d315d0577db9048a70db71fb5d1060a7ad00db78513ee2b6`. At this point the CredentialRegistry still contained `credentials=1`; there was **not yet** a second issued credential.
 
 The visible signing, finality tracking and verdict were captured in the user's separate 2026-11-09 live demo recording, which is not committed to this source repository.
+
+
+## Signed execution — Live demo Credential #2 issued
+
+| Field | Observed value |
+| --- | --- |
+| Method | `CredentialRegistry.issue_credential(2)` |
+| Transaction | [`0x0bbbfeab9ebfd689bae70a47dc5aa51a21bb82505a1ec99f654efb26195b4fd2`](https://explorer-studio.genlayer.com/tx/0x0bbbfeab9ebfd689bae70a47dc5aa51a21bb82505a1ec99f654efb26195b4fd2) |
+| Signer / holder | `0xD6b8A3A5eB329410D9504784812b8569afA8C2aF` |
+| Contract | `0x2cb21FaE6d3c712f00004806e9e583a89910ce1c` |
+| Execution | `FINALIZED` / GenVM `SUCCESS` (independent API read) |
+| Credential ID | `2` |
+
+Independent `LATEST_FINAL` state reads verified `CredentialRegistry.stats().credentials=2`, and both `get_credential(2)` and `credential_for(2, holder)` returned the same persisted record:
+
+- `id=2`, `attempt_id=2`, `challenge_id=2`, `challenge_version=1`.
+- `holder=0xd6b8a3a5eb329410d9504784812b8569afa8c2af`, `issuer=0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb`.
+- `status=VALID`, `verdict=PASS`, `revocation_reason=""`.
+- `evidence_sha256=bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e`.
+- `rubric_sha256=5100921b49985346d315d0577db9048a70db71fb5d1060a7ad00db78513ee2b6`.
+- `ChallengeBoard.get_attempt(2)` remained `ASSESSED/PASS` and `get_challenge(2).active=true`.
+
+**Proof boundary:** The separate live-recorded Challenge #2 workflow reached issuance and state-verified Credential #2. Its credential was not revoked, and Challenge #2 was not closed. These two administrative operations are available but are not part of the four-step issuance journey. Signed proof and readback establish a challenge-scoped AI consensus PASS over synthetic evidence, not external validation of applicant identity or execution of software.
