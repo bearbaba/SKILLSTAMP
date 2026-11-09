@@ -146,3 +146,10 @@ button{border:1px solid #d9d4de;background:#fff;border-radius:10px;padding:12px 
 .activity .txStateRow{align-items:center}
 .activity .txSpinner{width:16px;height:16px;flex:none}
 @media(max-width:720px){.activity{position:fixed;bottom:10px;left:10px;right:10px;width:auto;z-index:40;margin:0;box-shadow:0 18px 45px #1b123960;max-height:60vh;overflow:auto}}
+
+/* Live record shown only after a successful finalized credential read. */
+.specimen-card.is-live{background:linear-gradient(150deg,#f9f8ff,#e3dbff);border-color:#dcd3f1}
+.specimen-card.is-live .specimen-head{color:#504791}
+.specimen-card.is-live .specimen-kicker{color:#6253ab}
+.specimen-card.is-live .specimen-bottom{border-top-color:#bbb0dc;color:#5d4f96}
+.specimen-card.is-revoked{filter:saturate(.55);background:linear-gradient(150deg,#f7f3f3,#e7e1e6)}
