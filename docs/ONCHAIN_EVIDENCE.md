@@ -56,6 +56,26 @@ Independent `LATEST_FINAL` readback of `get_attempt(1)` confirmed:
 - `status=SUBMITTED`, `verdict=PENDING`
 - `stats()={challenges:1,attempts:1}`
 
-This confirms a signed, stored applicant attempt only. It does not imply that AI consensus has assessed the evidence, that the attempt has passed, or that a credential has been issued.
+At the time of submission, the attempt was `SUBMITTED/PENDING`; its status was subsequently changed by the following separately signed AI assessment.
 
-**Proof boundary:** The observed transactions establish one rubric-bound challenge and one submitted applicant attempt. No AI assessment, PASS verdict, credential issuance, or revocation is claimed without its own signed execution and finalized readback.
+## Signed execution — AI assessment for Attempt #1
+
+| Field | Observed value |
+| --- | --- |
+| Operation | `ChallengeBoard.assess_attempt(1)` |
+| Transaction | [`0xdf213c1de77d7f6c66dc7e2e8e3749d67a737a584b235d663c3d530ae69f85bc`](https://explorer-studio.genlayer.com/tx/0xdf213c1de77d7f6c66dc7e2e8e3749d67a737a584b235d663c3d530ae69f85bc) |
+| Signer / issuer | `0x4C7cb73aC8F8999af21cfc9fF4cF2333a9508Dcb` |
+| Destination | `0xD0CD74bfD7BaEE48Bdc57304F062e8f17A1566A6` |
+| Execution | `FINALIZED`, GenVM `SUCCESS` / `Return` |
+| Consensus | `Accepted` (Equivalence Principle output: `PASS`) |
+| Return verdict | `PASS` |
+
+Independent `LATEST_FINAL` readback returned:
+
+- `get_attempt(1).status=ASSESSED`, `get_attempt(1).verdict=PASS`
+- `get_attempt(1).challenge_id=1`, `challenge_version=1`, `evidence_sha256=bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e`
+- `credential_permission(1,0xD6b8A3A5eB329410D9504784812b8569afA8C2aF).allowed=true`
+- Permission explicitly matches `applicant=actor=0xd6b8a3a5eb329410d9504784812b8569afa8c2af`, `verdict=PASS`, `challenge_version=1`, and original rubric/evidence SHA-256 digests.
+- `CredentialRegistry.stats()={board:"0xD0CD74bfD7BaEE48Bdc57304F062e8f17A1566A6",credentials:0}`.
+
+**Proof boundary:** Signed executions establish Challenge #1, Applicant Attempt #1, and a `PASS` AI assessment with a current cross-contract credential permission. A credential has **not** yet been issued, and neither issuance nor revocation is claimed. `PASS` evaluates the supplied synthetic evidence text, not independent proof of applicant identity or source-code execution.
