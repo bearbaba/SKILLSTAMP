@@ -151,3 +151,18 @@ The new challenge had no recorded new applicant attempt at this point. No subseq
 | Evidence SHA-256 | `bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e` |
 
 Independent `LATEST_FINAL` readback from `get_attempt(2)` verified `id=2`, `challenge_id=2`, `challenge_version=1`, `applicant=0xd6b8a3a5eb329410d9504784812b8569afa8c2af`, and an unchanged rubric digest `5100921b49985346d315d0577db9048a70db71fb5d1060a7ad00db78513ee2b6`. Immediately after signing, `status=SUBMITTED` and `verdict=PENDING`; `stats()={challenges:2,attempts:2}`. This transaction does **not** establish a PASS or credential for Attempt #2 without later AI adjudication.
+
+
+## Signed execution — Live demo AI assessment for Attempt #2
+
+| Field | Observed value |
+| --- | --- |
+| Method | `ChallengeBoard.assess_attempt(2)` |
+| Transaction | [`0xe25db20b1871d47633413c588c234e8f89869cb9b613147ee48574dedf63f954`](https://explorer-studio.genlayer.com/tx/0xe25db20b1871d47633413c588c234e8f89869cb9b613147ee48574dedf63f954) |
+| Issuer | `0x4C7cb73aC8F8999af21cfc9fF4cF2333a9508Dcb` |
+| Execution | `FINALIZED` / GenVM `SUCCESS` |
+| Verdict | `PASS` |
+
+The direct `LATEST_FINAL` read `get_attempt(2)` returned `status=ASSESSED`, `verdict=PASS`, `challenge_id=2` and `applicant=0xd6b8a3a5eb329410d9504784812b8569afa8c2af`. `credential_permission(2,0xD6b8A3A5eB329410D9504784812b8569afA8C2aF)` returned `allowed=true`, linked to Challenge #2 and the original `evidence_sha256=bcd17a099c28e5f77f2e6f87a69346d5574584186c27619087233dc7b8be982e`, `rubric_sha256=5100921b49985346d315d0577db9048a70db71fb5d1060a7ad00db78513ee2b6`. At this point the CredentialRegistry still contained `credentials=1`; there was **not yet** a second issued credential.
+
+The visible signing, finality tracking and verdict were captured in the user's separate 2026-11-09 live demo recording, which is not committed to this source repository.
