@@ -21,53 +21,55 @@ function field([key,title,kind],method){
  return '<label class="'+(kind==='textarea'?'wide':'')+'">'+esc(title)+input+'</label>';
 }
 function formHTML(action){
- return '<section class="action"><div class="actionTop"><div><span class="eyebrow">'+esc(action.scope==='first'?project.labels[0]:project.labels[1])+
- '</span><h2>'+esc(action.title)+'</h2><div class="hint">'+esc(action.subtitle)+'</div></div><span class="role">'+esc(action.role)+'</span></div>'+
+ const index=project.forms.findIndex(x=>x.method===action.method);
+ const phase=index<3?'ASSESSMENT':'CREDENTIAL';
+ return '<article class="action"><div class="actionTop"><div class="action-number">'+String(index+1).padStart(2,'0')+'</div><div class="action-intro"><span class="eyebrow">'+phase+' · '+esc(action.scope==='first'?project.labels[0]:project.labels[1])+'</span><h2>'+esc(action.title)+'</h2><p class="hint">'+esc(action.subtitle)+'</p></div><span class="role">'+esc(action.role)+'</span></div>'+
  '<form data-form="'+esc(action.method)+'"><div class="fields">'+action.fields.map(f=>field(f,action.method)).join('')+'</div>'+
- '<div class="actionFooter">'+(action.preset?'<button type="button" data-fill="'+esc(action.method)+'">Fill example</button>':'')+
- (action.hashSource?'<button type="button" data-digest="'+esc(action.method)+'">Calculate SHA-256</button>':'')+
- '<small>Review every value before signing.</small><button type="submit" class="primary" data-sign>Sign & verify →</button></div></form></section>';
+ '<div class="actionFooter">'+(action.preset?'<button class="soft" type="button" data-fill="'+esc(action.method)+'">Load example</button>':'')+
+ (action.hashSource?'<button class="soft" type="button" data-digest="'+esc(action.method)+'">Generate SHA-256</button>':'')+
+ '<small>Wallet approval required · Studionet</small><button type="submit" class="primary" data-sign>Sign transaction <span aria-hidden="true">↗</span></button></div></form></article>';
 }
 function render(){
- document.title=project.name+' · GenLayer Studionet';
- document.documentElement.style.setProperty('--accent',project.id==='reputrail'?'#956d42':'#2a7b76');
+ document.title='SKILLSTAMP — Verifiable skill credentials';
+ const cards=project.cards.map((c,i)=>'<article class="path-card"><div class="path-top"><span>MODULE / '+esc(c[0])+'</span><span>0'+(i+1)+' — 04</span></div><div class="path-symbol">'+['✧','◇','◎','✳'][i]+'</div><h3>'+esc(c[1])+'</h3><p>'+esc(c[2])+'</p></article>').join('');
+ const methods=project.forms.map((a,i)=>'<div class="rail-step"><span>'+String(i+1).padStart(2,'0')+'</span><div><b>'+esc(a.title)+'</b><small>'+esc(a.role)+'</small></div></div>').join('');
+ const queryOptions=project.reads.map((r,i)=>'<option value="'+i+'">'+esc(r[0])+'</option>').join('');
  $('app').innerHTML=
- '<div class="app"><aside class="sidebar"><a class="brand" href="#overview"><span class="logo">'+esc(project.name[0])+'</span><span>'+esc(project.name)+'<small>GENLAYER PROTOCOL</small></span></a>'+
- '<div class="label">WORKSPACE</div><nav class="nav" aria-label="App navigation">'+
- '<button type="button" data-page="overview" class="active">Overview <span>01</span></button>'+
- '<button type="button" data-page="workflow">Workspace <span>02</span></button>'+
- '<button type="button" data-page="explorer">Chain explorer <span>03</span></button></nav>'+
- '<div class="sideFoot"><b>● STUDIONET · 61999</b><div>No mainnet or external identity verification.</div><a href="https://github.com/bearbaba/'+esc(project.name)+'" rel="noopener" target="_blank">Open source ↗</a></div></aside>'+
- '<main><header><span id="breadcrumb">Overview</span><div class="right"><span class="network" id="network">Checking deployment…</span><button class="wallet" id="wallet">Connect wallet</button></div></header>'+
- '<div class="content">'+
- '<section class="page" id="overview"><span class="eyebrow">'+esc(project.eyebrow)+'</span><h1>'+esc(project.hero)+'</h1><p class="lede">'+esc(project.intro)+'</p>'+
- '<div class="buttons"><button class="primary" data-page="workflow">Open workspace →</button><button data-page="explorer">Inspect on-chain state</button></div>'+
- '<div class="stats"><div class="stat"><small>Network</small><strong>Studionet</strong><p>Chain 61999 · test GEN</p></div>'+
- '<div class="stat"><small>Intelligent Contracts</small><strong>02</strong><p>'+esc(project.labels.join(' + '))+'</p></div>'+
- '<div class="stat"><small>Live integration</small><strong id="deployState">CHECKING</strong><p>Source parity requires separate verification</p></div></div>'+
- '<div class="panel"><h2>A complete evidence workflow</h2><p>Signed identities, version-aware permission checks and independent consensus where judgment matters.</p>'+
- '<div class="process">'+project.cards.map(c=>'<article><span>'+esc(c[0])+'</span><strong>'+esc(c[1])+'</strong><p>'+esc(c[2])+'</p></article>').join('')+'</div></div>'+
- '<p class="footnote"><strong>Proof boundary.</strong> '+esc(project.scope)+'</p></section>'+
- '<section class="page" id="workflow" hidden><span class="eyebrow">SIGNED OPERATIONS · WALLET ROLES</span><h1>Work with real contracts.</h1>'+
- '<p class="lede">Follow the cards in order. Switch to the specified signer. Every write waits for GenLayer finality and verifies persisted state before confirmation.</p>'+
- '<div class="notice warning" id="workflowNotice">Contract deployment is required before signing. You can inspect example fields without submitting transactions.</div>'+
- '<div class="gridForms">'+project.forms.map(formHTML).join('')+'</div></section>'+
- '<section class="page" id="explorer" hidden><span class="eyebrow">READ ONLY · LATEST_FINAL</span><h1>Inspect the chain.</h1>'+
- '<p class="lede">Public readback of actual stored contract state. A transaction hash alone never proves successful execution.</p>'+
- '<section class="panel"><h2>Query a record</h2><form id="readForm" class="readForm"><div class="fields">'+
- '<label class="wide">Read method<select id="readMethod">'+project.reads.map((r,i)=>'<option value="'+i+'">'+esc(r[0])+'</option>').join('')+'</select></label>'+
- '<label>ID (when required)<input id="readId" type="number" value="1" min="1" step="1"></label>'+
- '<label>Wallet (when required)<input id="readActor" type="text" placeholder="0x…"></label></div>'+
- '<button type="submit" class="primary">Read LATEST_FINAL →</button></form>'+
- '<pre id="readResult" class="readResult">Choose a query and run readback.</pre></section>'+
- '<p class="footnote">No signatures or wallet connection required for reads. Evidence can be compared to on-chain values and contract source.</p></section></div></main>'+
- '<aside class="activity" aria-live="polite"><div class="eyebrow">TRANSACTION TRACKER</div><h2 id="txTitle" class="txState">Ready to inspect.</h2>'+
- '<p id="txInfo" class="txInfo">Connect the required wallet and choose one action. No transaction has been sent.</p>'+
- '<div id="txHash" class="txHash">No pending transaction</div>'+
- '<div class="txSteps"><div id="phase1">01 · Wallet signature</div><div id="phase2">02 · Finalized execution</div><div id="phase3">03 · State readback</div></div>'+
- '<a id="txLink" target="_blank" rel="noopener" hidden>Open transaction in Explorer ↗</a>'+
- '<button id="retry" hidden>Recheck pending transaction</button>'+
- '<div id="walletIdentity" class="walletIdentity">No wallet selected.</div></aside></div>';
+ '<div class="academy-app"><header class="academy-header"><a class="academy-brand" href="#overview"><span class="brand-monogram">S<span>✳</span></span><span>SKILLSTAMP<small>PROOF OF PRACTICE</small></span></a>'+
+ '<nav class="nav" aria-label="Primary navigation"><button class="active" type="button" data-page="overview">Discover</button><button type="button" data-page="workflow">Assessment studio</button><button type="button" data-page="explorer">Verify a credential</button></nav>'+
+ '<div class="header-actions"><span class="network" id="network">Connecting to Studionet…</span><button class="wallet" id="wallet">Connect wallet ↗</button></div></header>'+
+ '<main class="main-shell"><div class="content"><section class="page" id="overview">'+
+ '<div class="hero-grid"><div class="hero-copy"><div class="eyebrow"><span class="spark">✳</span> SKILLS DESERVE BETTER PROOF <span class="eyebrow-line"></span> GENLAYER / 61999</div>'+
+ '<h1>Make your<br><em>work</em> your<br>credential<span class="fullstop">.</span></h1>'+
+ '<p class="lede">A challenge. Your evidence. An independent AI decision. A credential tied to the exact work — not just a badge on a profile.</p>'+
+ '<div class="buttons"><button class="primary" data-page="workflow">Enter the assessment studio <span aria-hidden="true">↗</span></button><button class="outline" data-page="explorer">Verify on-chain ↗</button></div>'+
+ '<div class="hero-micro"><span class="micro-dot"></span><span id="deployState">CHECKING</span><span> · </span><span>GenLayer Studionet / Test network</span></div></div>'+
+ '<div class="certificate-stage"><div class="halo halo-a"></div><div class="halo halo-b"></div><div class="specimen-card">'+
+ '<div class="specimen-head"><span class="tiny-star">✳</span><span>SKILLSTAMP / STUDIO</span><span>NO. —</span></div>'+
+ '<div class="specimen-main"><span class="specimen-kicker">EVIDENCE-BOUND / SAMPLE FORMAT</span><div class="specimen-badge">S<span>✧</span></div><strong>Proof of<br>competency</strong>'+
+ '<p>Scoped assessment · Versioned rubric · Linked to a wallet</p></div>'+
+ '<div class="specimen-bottom"><span>UNISSUED EXAMPLE<br><b>Not a live credential</b></span><span class="barcode">▌▌▏▌▏▌▌▏▌▏</span></div></div>'+
+ '<span class="decor-note">TRUST IS EARNED, NOT CLAIMED ↗</span></div></div>'+
+ '<div class="metric-bar"><div><small>01 / NETWORK</small><b>Studionet <span>61999</span></b></div><div><small>02 / ON-CHAIN CORE</small><b>02 contracts</b></div><div><small>03 / EVIDENCE</small><b>SHA-256 linked</b></div><div><small>04 / REVIEW</small><b>Independent AI</b></div></div>'+
+ '<section class="section-wrap"><div class="section-intro"><div class="eyebrow">LEARNING, VERIFIED</div><h2>From a skill to<br><em>something provable.</em></h2><p>No mysterious reputation score. Every pass is scoped to a specific challenge, evidence and rubric version.</p></div>'+
+ '<div class="path-grid">'+cards+'</div></section>'+
+ '<div class="boundary-strip"><span>IMPORTANT / SCOPE</span><p>'+esc(project.scope)+'</p></div>'+
+ '</section>'+
+ '<section class="page" id="workflow" hidden><div class="section-heading"><span class="eyebrow">ASSESSMENT / WORKSPACE</span><h1>Your credential begins<br>with <em>evidence.</em></h1><p>Complete only the step that matches your wallet role. Every action is signed; success is confirmed against final on-chain state.</p></div>'+
+ '<div class="workspace-grid"><aside class="workspace-guide"><div class="guide-label">THE CREDENTIAL JOURNEY</div><div class="guide-steps">'+methods+'</div><div class="guide-foot"><span>✳</span><p>Keep the exact evidence text and SHA-256 together. A PASS is bound to this specific rubric.</p></div></aside>'+
+ '<div class="workspace-body"><div class="notice warning" id="workflowNotice">Checking deployed contracts before wallet signing…</div><div class="gridForms">'+project.forms.map(formHTML).join('')+'</div></div></div></section>'+
+ '<section class="page" id="explorer" hidden><div class="verify-hero"><div class="eyebrow">CREDENTIAL LOOKUP / LATEST_FINAL</div><h1>Verify the<br><em>evidence trail.</em></h1><p>No wallet connection needed. Read records directly from the deployed contracts and inspect their current status.</p></div>'+
+ '<div class="verify-layout"><div class="verify-illustration"><div class="verify-big">✳</div><span>AUTHENTICITY IS A PROCESS</span><p>Credential records contain the holder, challenge, rubric digest, evidence digest and status. A revoked credential remains readable.</p></div>'+
+ '<section class="panel lookup-panel"><div class="eyebrow">ON-CHAIN QUERY</div><h2>Check a record</h2>'+
+ '<form id="readForm" class="readForm"><div class="fields"><label class="wide">Which record?<select id="readMethod">'+queryOptions+'</select></label>'+
+ '<label>Record ID<input id="readId" type="number" value="1" min="1" step="1"></label>'+
+ '<label>Wallet address<input id="readActor" type="text" placeholder="0x…"></label></div><button class="primary" type="submit">Read final state <span aria-hidden="true">↗</span></button></form>'+
+ '<pre id="readResult" class="readResult">Select a record to load its on-chain state.</pre></section></div></section></div></main>'+
+ '<aside class="activity" aria-live="polite"><div class="activity-head"><span class="eyebrow">SIGNATURE / ACTIVITY</span><span class="activity-mini">STUDIONET</span></div>'+
+ '<h2 class="txState" id="txTitle">Your signature, your proof.</h2><p class="txInfo" id="txInfo">Choose an assessment action to begin. No transaction has been sent.</p>'+
+ '<div class="txSteps"><div id="phase1">01 / Sign</div><div id="phase2">02 / Finalize</div><div id="phase3">03 / Verify</div></div>'+
+ '<div class="txHash" id="txHash">No pending transaction</div><div class="activity-bottom"><a id="txLink" target="_blank" rel="noopener" hidden>View on Explorer ↗</a>'+
+ '<button id="retry" type="button" hidden>Recheck transaction</button></div><div class="walletIdentity" id="walletIdentity">No wallet selected.</div></aside></div>';
  bind();
 }
 function notice(title,info,phase=0,hash=''){
@@ -104,7 +106,7 @@ function bind(){
  };
  for(const button of document.querySelectorAll('[data-digest]'))button.onclick=async()=>{
   try{const m=button.dataset.digest,a=project.forms.find(x=>x.method===m);
-   const text=$('f_'+m+'_'+a.hashSource).value;
+   const text=$('f_'+m+'_'+a.hashSource).value.trim();
    if(!text)throw Error('Enter the exact evidence or delivery content first');
    const field=a.fields.find(x=>x[2]==='hash');
    $('f_'+m+'_'+field[0]).value=await sha256(text);
