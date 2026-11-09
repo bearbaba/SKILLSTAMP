@@ -14,9 +14,14 @@ SKILLSTAMP links a clearly defined challenge to evidence signed by an applicant 
 
 ## Technical boundaries
 
-The network target is GenLayer Studionet (**61999**). **No contract deployment, signed on-chain acceptance, or production website availability is claimed yet.** The web application does not enable writes without configured deployed addresses.
+The deployment target is GenLayer Studionet (**61999**). Two deployed Intelligent Contracts are connected to the public web app at [skillstamp-omega.vercel.app](https://skillstamp-omega.vercel.app/):
 
-An on-chain `PASS` would attest to a verdict on supplied evidence under a particular rubric; it would not independently establish real-world identity, authorship, code execution, or professional certification.
+- **ChallengeBoard:** [`0xD0CD74bfD7BaEE48Bdc57304F062e8f17A1566A6`](https://explorer-studio.genlayer.com/address/0xD0CD74bfD7BaEE48Bdc57304F062e8f17A1566A6)
+- **CredentialRegistry:** [`0x2cb21FaE6d3c712f00004806e9e583a89910ce1c`](https://explorer-studio.genlayer.com/address/0x2cb21FaE6d3c712f00004806e9e583a89910ce1c)
+
+The complete signed on-chain workflow (challenge creation, evidence submission, AI assessment and credential issuance), an expected duplicate-issuance rollback, transaction links, and independent `LATEST_FINAL` state readbacks are recorded in [the technical on-chain evidence](docs/ONCHAIN_EVIDENCE.md). The verification logic distinguishes finalized successful execution from exact persisted-state verification. The web application disables signing if deployment addresses are not configured.
+
+An on-chain `PASS` attests to a verdict on supplied evidence under a particular rubric; it would not independently establish real-world identity, authorship, code execution, or professional certification.
 
 ## Source
 
