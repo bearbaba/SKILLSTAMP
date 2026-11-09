@@ -186,7 +186,8 @@ async function checkHistoryHash(hash){
     try{verified=Boolean((await readProof(pending)).ok)}catch{}
     if(verified){clearPending();$('retry').hidden=true}
    }
-   updateTxStatus(txStorage(),hash,verified?'verified':'finalized-success');
+   const previouslyVerified=readHistory(txStorage()).some(r=>r.hash===hash.toLowerCase()&&r.status==='verified');
+   updateTxStatus(txStorage(),hash,verified||previouslyVerified?'verified':'finalized-success');
   }else{
    const old=readHistory(txStorage()).find(r=>r.hash===hash.toLowerCase());
    if(!old||['pending','state-unverified'].includes(old.status))
